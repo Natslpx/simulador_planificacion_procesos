@@ -666,9 +666,34 @@ class VisualizadorProcesos:
         main_container = tk.Frame(self.sim_win, bg=self.colors['bg_primary'])
         main_container.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        left_frame = tk.Frame(main_container, bg='white', width=400)
-        left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
-        left_frame.pack_propagate(False)
+        # ========== PANEL IZQUIERDO CON SCROLL ==========
+        left_container = tk.Frame(main_container, bg='white', width=420)
+        left_container.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        left_container.pack_propagate(False)
+
+        left_scroll = ttk.Scrollbar(left_container, orient=tk.VERTICAL)
+        left_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        left_canvas = tk.Canvas(
+            left_container,
+            bg='white',
+            yscrollcommand=left_scroll.set,
+            highlightthickness=0
+        )
+        left_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        left_scroll.config(command=left_canvas.yview)
+
+        # Frame interno donde va TODO lo existente
+        left_frame = tk.Frame(left_canvas, bg='white')
+        left_canvas.create_window((0, 0), window=left_frame, anchor="nw")
+
+        # Ajustar región de scroll automáticamente
+        def _update_left_scroll(event):
+            left_canvas.configure(scrollregion=left_canvas.bbox("all"))
+
+        left_frame.bind("<Configure>", _update_left_scroll)
+
 
         right_frame = tk.Frame(main_container, bg='white')
         right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
