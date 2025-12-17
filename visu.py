@@ -854,6 +854,7 @@ class VisualizadorProcesos:
             with self.sim_lock:
                 if not self._hay_procesos():
                     self.sim_pause = True
+                    self.root.after(0, self._gui_update)
                     time.sleep(0.1)
                     continue
 
