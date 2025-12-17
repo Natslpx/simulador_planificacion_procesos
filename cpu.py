@@ -3,7 +3,6 @@ import time
 from proceso import Proceso
 
 
-
 class CPU:
     def __init__(self, id):
         self.id = id

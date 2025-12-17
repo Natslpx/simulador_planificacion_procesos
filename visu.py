@@ -14,7 +14,7 @@ class VisualizadorProcesos:
     def __init__(self, root):
         self.root = root
         self.root.title("Visualizador de Procesos - Sistema de Planificación")
-        self.root.geometry("1400x900")
+        self.root.geometry("1400x1000")
 
         # Colores modernos
         self.colors = {
@@ -350,10 +350,10 @@ class VisualizadorProcesos:
         raw_procs = []
         try:
             # Iteramos una vez para capturar datos
-            for p in psutil.process_iter(['pid', 'name', 'cpu_percent', 'cpu_times']):
+            for p in psutil.process_iter(['pid', 'name', 'cpu_percent', 'cpu_times', 'nice']):
                 try:
                     # Forzamos una lectura de CPU (psutil a veces requiere esto para actualizar)
-                    p.cpu_percent(interval=None) 
+                    p.cpu_percent(interval=None)
                     raw_procs.append(p)
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
@@ -366,7 +366,7 @@ class VisualizadorProcesos:
         raw_procs.sort(key=lambda p: p.info.get('cpu_percent') or 0.0, reverse=True)
 
         # 3. SELECCIONAR solo el TOP 25
-        top_procs = raw_procs[:25]
+        top_procs = raw_procs[:5]
         
         count = 0
         existing_pids = {p.pid for p in self.procesos}
@@ -374,9 +374,6 @@ class VisualizadorProcesos:
         for p in top_procs:
             try:
                 pid = p.info['pid']
-                if pid in existing_pids:
-                    continue
-                
                 nombre = p.info.get('name') or f"proc{pid}"
                 
                 # Calcular tiempo de ráfaga
@@ -386,17 +383,27 @@ class VisualizadorProcesos:
                     # para que no sea infinito en la simulación
                     raw_time = (ct.user + ct.system)
                     # Truco: Si es muy grande, lo limitamos a algo visible (ej. entre 2 y 8 seg)
-                    if raw_time > 10:
+                    if raw_time > 100:
                         cpu_time = uniform(4.0, 12.0)
                     else:
                         cpu_time = max(1.0, raw_time)
                 else:
-                    cpu_time = uniform(1.0, 5.0)
-
-                arrival_time = time.time()
-                priority = randint(0, 10)
+                    cpu_time = uniform(1.0, 12.0)
                 
-                nuevo_proceso = Proceso(pid, nombre, cpu_time, arrival_time, cpu_time, None, priority)
+                pun = 0.1
+
+                arrival_time = self.sim_time if hasattr(self, 'sim_time') else 0.0+pun
+                pun += 0.1
+                priority_raw = p.info.get('nice')
+
+                try:
+                    priority = int(priority_raw)
+                    if priority < 0:
+                        priority = randint(0, 20)
+                except (TypeError, ValueError):
+                    priority = randint(0, 20)
+                
+                nuevo_proceso = Proceso(pid, nombre, cpu_time, arrival_time, cpu_time, 1, priority)
                 self.procesos.append(nuevo_proceso)
                 existing_pids.add(pid)
                 count += 1
@@ -979,7 +986,7 @@ class VisualizadorProcesos:
         self.gantt_canvas.delete("all")
         
         # --- CONFIGURACIÓN DE ZOOM ---
-        window_size = 20.0  # <--- HE BAJADO ESTO A 20s PARA QUE SE VEA MÁS GRANDE
+        window_size = 5.0  # <--- HE BAJADO ESTO A 20s PARA QUE SE VEA MÁS GRANDE
         current_time = self.sim_time
         start_visible_time = max(0.0, current_time - window_size)
         
