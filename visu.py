@@ -359,7 +359,7 @@ class VisualizadorProcesos:
         raw_procs.sort(key=lambda p: p.info.get('cpu_percent') or 0.0, reverse=True)
 
         # 3. SELECCIONAR solo el TOP 25
-        top_procs = raw_procs[:5]
+        top_procs = raw_procs[:25]
         
         count = 0
         existing_pids = {p.pid for p in self.procesos}
