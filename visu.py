@@ -55,13 +55,11 @@ class VisualizadorProcesos:
         self.completed_info = {}
 
     def _create_header(self):
-        """Crear header moderno con gradiente"""
         header_frame = tk.Frame(self.root, bg=self.colors['bg_header'], height=30)
         header_frame.pack(fill=tk.X, pady=(0, 5))
         header_frame.pack_propagate(False)
 
     def _create_metrics_panel(self):
-        """Panel de métricas superior"""
         metrics_frame = tk.Frame(self.root, bg=self.colors['bg_primary'])
         metrics_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
 
@@ -72,7 +70,6 @@ class VisualizadorProcesos:
         self.metric_status = self._create_metric_card(metrics_frame, "Estado Sistema", "Listo", self.colors['accent'])
 
     def _create_metric_card(self, parent, title, value, color):
-        """Crear tarjeta de métrica individual"""
         card = tk.Frame(parent, bg='white', relief=tk.RAISED, bd=1)
         card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
 
@@ -207,15 +204,12 @@ class VisualizadorProcesos:
             btn_frame.columnconfigure(i, weight=1)
 
     def _on_button_hover(self, button, color):
-        """Efecto hover en botones"""
         button.configure(bg=self._darken_color(color))
 
     def _on_button_leave(self, button, color):
-        """Restaurar color original"""
         button.configure(bg=color)
 
     def _darken_color(self, hex_color):
-        """Oscurecer un color hexadecimal"""
         hex_color = hex_color.lstrip('#')
         r, g, b = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
         r = max(0, int(r * 0.85))
@@ -224,7 +218,6 @@ class VisualizadorProcesos:
         return f'#{r:02x}{g:02x}{b:02x}'
 
     def actualizar_tabla(self):
-        """Actualizar tabla con colores alternados"""
         for item in self.tree.get_children():
             self.tree.delete(item)
 
@@ -253,7 +246,7 @@ class VisualizadorProcesos:
         
         ventana_agregar = tk.Toplevel(self.root)
         ventana_agregar.title("Agregar Proceso")
-        ventana_agregar.geometry("450x480")
+        ventana_agregar.geometry("450x500")
         ventana_agregar.configure(bg='white')
 
         # Header
@@ -289,7 +282,7 @@ class VisualizadorProcesos:
             ("Priority (0-10):", "entry_priority", default_prio)
         ]
 
-        self.entry_widgets = {} # Usamos self para mantener referencias vivas
+        self.entry_widgets = {} 
 
         # --- 3. BUCLE DE CREACIÓN CON STRINGVAR ---
         for label_text, entry_name, default_val in fields:
@@ -303,7 +296,7 @@ class VisualizadorProcesos:
             
             entry = tk.Entry(
                 content, 
-                textvariable=var_control,  # <--- AQUÍ ESTÁ EL CAMBIO CLAVE
+                textvariable=var_control,
                 font=('Segoe UI', 11), 
                 relief=tk.FLAT,
                 bg='#f7fafc', 
@@ -391,9 +384,9 @@ class VisualizadorProcesos:
                     cpu_time = uniform(1.0, 12.0)
                 
                 pun = 0.1
-
-                arrival_time = self.sim_time if hasattr(self, 'sim_time') else 0.0+pun
+                arrival_time = self.sim_time if hasattr(self, 'sim_time') else 0.0 +pun
                 pun += 0.1
+                
                 priority_raw = p.info.get('nice')
 
                 try:
@@ -484,7 +477,7 @@ class VisualizadorProcesos:
     def configurar_cpus(self):
         ventana_config = tk.Toplevel(self.root)
         ventana_config.title("Configurar CPUs")
-        ventana_config.geometry("700x450")
+        ventana_config.geometry("700x530")
         ventana_config.configure(bg='white')
 
         # Header
@@ -567,7 +560,7 @@ class VisualizadorProcesos:
             except ValueError:
                 messagebox.showerror("Error", "Valores inválidos")
 
-        tk.Button(ventana_config, text="Guardar", command=guardar_configs, bg=self.colors['accent'], fg='white',
+        tk.Button(ventana_config, text="Guardar", command=lambda: [guardar_configs(), ventana_config.destroy()], bg=self.colors['accent'], fg='white',
                   font=('Segoe UI', 11, 'bold'), relief=tk.FLAT, cursor='hand2', padx=20, pady=10).pack(pady=8)
 
         tk.Button(
@@ -591,7 +584,7 @@ class VisualizadorProcesos:
     def abrir_config_rr(self, cpu):
         ventana_rr = tk.Toplevel(self.root)
         ventana_rr.title(f"Configurar Quantum - CPU {cpu.id}")
-        ventana_rr.geometry("400x250")
+        ventana_rr.geometry("400x290")
         ventana_rr.configure(bg='white')
 
         header = tk.Frame(ventana_rr, bg=self.colors['bg_header'], height=60)
@@ -654,7 +647,7 @@ class VisualizadorProcesos:
 
         self.sim_win = tk.Toplevel(self.root)
         self.sim_win.title("Simulación de Planificación en Vivo")
-        self.sim_win.geometry("1400x900")
+        self.sim_win.geometry("1400x1000")
         self.sim_win.configure(bg=self.colors['bg_primary'])
 
         # Header
@@ -791,7 +784,7 @@ class VisualizadorProcesos:
         self.sim_pause = True
         self.sim_thread.start()
 
-        self._assign_new_processes()
+        #self._assign_new_processes()
         self._gui_update()
 
     def start_simulation(self):
@@ -819,6 +812,10 @@ class VisualizadorProcesos:
 
         # Llamamos a la asignación en modo SILENCIOSO para no interrumpir la simulación
         self.asignar_procesos_a_cpus(silent=True)
+    
+    def _hay_procesos(self):
+        return any(cpu.procesos for cpu in self.cpus)
+
 
     def _simulation_loop(self):
         # Este hilo se encarga de la lógica----------- cualquier actualización de GUI se hace con root.after
@@ -828,12 +825,20 @@ class VisualizadorProcesos:
             if not self.sim_running or self.sim_pause:
                 time.sleep(0.1)
                 continue
+            # ⏸️ Pausar automáticamente si no hay procesos
+            with self.sim_lock:
+                if not self._hay_procesos():
+                    self.sim_pause = True
+                    time.sleep(0.1)
+                    continue
+
 
             with self.sim_lock:
                 # Chequear procesos nuevos cada 0.5s
                 if time.time() - last_assign_check > 0.5:
-                    self._assign_new_processes()
+                    #self._assign_new_processes()
                     last_assign_check = time.time()
+                    
 
                 # Avanzar simulación por tick
                 self.sim_time += self.sim_tick
@@ -871,7 +876,19 @@ class VisualizadorProcesos:
                     if current.remaining_time <= 1e-9:
                         finish_time = self.sim_time
                         turnaround = finish_time - current.arrival_time
-                        waiting = turnaround - current.cpu_time
+                        
+                        waiting = turnaround - current.burst_time
+
+                        print(f"\n=== Proceso {current.pid} completado ===")
+                        print(f"sim_time (finish): {finish_time}")
+                        print(f"arrival_time: {current.arrival_time}")
+                        print(f"burst_time: {current.burst_time}")
+                        print(f"turnaround: {turnaround}")
+                        print(f"waiting: {waiting}")
+                        print(f"=====================================\n")
+
+                        
+                        
                         self.completed_info[current.pid] = {
                             'completion': finish_time,
                             'turnaround': turnaround,
